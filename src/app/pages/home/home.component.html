@@ -1,0 +1,49 @@
+<div class="home-container">
+  <div class="hero-section">
+    <div class="hero-icon">📡</div>
+    <h1 class="hero-title">Chiro Logger</h1>
+    <p class="hero-subtitle">Surveillance et acquisition de données environnementales</p>
+  </div>
+
+  <div class="connection-section">
+    <app-connection></app-connection>
+  </div>
+
+  <div class="features-section" *ngIf="!isConnected">
+    <mat-card class="feature-card">
+      <mat-card-content>
+        <div class="feature-icon">
+          🔗
+        </div>
+        <h3>Connexion Bluetooth</h3>
+        <p>Connectez-vous à votre datalogger ESP32 via Bluetooth Low Energy</p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="feature-card">
+      <mat-card-content>
+        <div class="feature-icon">
+          📊
+        </div>
+        <h3>Données en temps réel</h3>
+        <p>Visualisez les données de vos capteurs en temps réel</p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="feature-card">
+      <mat-card-content>
+        <div class="feature-icon">
+          💾
+        </div>
+        <h3>Export des données</h3>
+        <p>Exportez vos données au format CSV pour analyse</p>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div class="quick-actions" *ngIf="isConnected">
+    <button mat-raised-button color="primary" routerLink="/dashboard">
+      📊 Voir le tableau de bord
+    </button>
+  </div>
+</div>

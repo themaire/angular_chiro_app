@@ -1,0 +1,81 @@
+<div class="chart-container">
+  <div class="chart-header">
+    <div class="chart-tabs">
+      <button 
+        mat-button 
+        [class.active]="selectedMetric === 'temperature'"
+        (click)="setMetric('temperature')">
+        <mat-icon>thermostat</mat-icon>
+        Température
+      </button>
+      <button 
+        mat-button 
+        [class.active]="selectedMetric === 'humidity'"
+        (click)="setMetric('humidity')">
+        <mat-icon>opacity</mat-icon>
+        Humidité
+      </button>
+      <button 
+        mat-button 
+        [class.active]="selectedMetric === 'pressure'"
+        (click)="setMetric('pressure')">
+        <mat-icon>compress</mat-icon>
+        Pression
+      </button>
+      <button 
+        mat-button 
+        [class.active]="selectedMetric === 'batteryVoltage'"
+        (click)="setMetric('batteryVoltage')">
+        <mat-icon>battery_std</mat-icon>
+        Batterie
+      </button>
+    </div>
+  </div>
+
+  <div class="chart-content" *ngIf="data.length > 0; else noData">
+    <div class="chart-stats">
+      <div class="stat-item">
+        <span class="stat-label">Min:</span>
+        <span class="stat-value">{{ currentStats.min | number:'1.1-1' }}{{ currentUnit }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Max:</span>
+        <span class="stat-value">{{ currentStats.max | number:'1.1-1' }}{{ currentUnit }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Moyenne:</span>
+        <span class="stat-value">{{ currentStats.avg | number:'1.1-1' }}{{ currentUnit }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Points:</span>
+        <span class="stat-value">{{ data.length }}</span>
+      </div>
+    </div>
+
+    <div class="simple-chart">
+      <div class="chart-grid">
+        <div class="chart-line" 
+             *ngFor="let point of chartData; let i = index"
+             [style.left.%]="point.x"
+             [style.bottom.%]="point.y"
+             [style.background-color]="getPointColor(point.value)"
+             [title]="getPointTitle(point)">
+        </div>
+      </div>
+      <div class="chart-axis">
+        <div class="axis-label">{{ getCurrentMetricName() }}</div>
+        <div class="axis-values">
+          <span>{{ currentStats.min | number:'1.1-1' }}{{ currentUnit }}</span>
+          <span>{{ currentStats.max | number:'1.1-1' }}{{ currentUnit }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #noData>
+    <div class="no-data">
+      <mat-icon>show_chart</mat-icon>
+      <p>Aucune donnée à afficher</p>
+    </div>
+  </ng-template>
+</div>

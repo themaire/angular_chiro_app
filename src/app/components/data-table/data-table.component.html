@@ -1,0 +1,42 @@
+<div class="data-table-container">
+  <table mat-table [dataSource]="dataSource" matSort class="data-table">
+    <ng-container matColumnDef="timestamp">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Horodatage</th>
+      <td mat-cell *matCellDef="let element">{{ element.timestamp | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="temperature">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Température</th>
+      <td mat-cell *matCellDef="let element">{{ element.temperature | number:'1.1-1' }}°C</td>
+    </ng-container>
+
+    <ng-container matColumnDef="humidity">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Humidité</th>
+      <td mat-cell *matCellDef="let element">{{ element.humidity | number:'1.1-1' }}%</td>
+    </ng-container>
+
+    <ng-container matColumnDef="pressure">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Pression</th>
+      <td mat-cell *matCellDef="let element">{{ element.pressure | number:'1.0-0' }} hPa</td>
+    </ng-container>
+
+    <ng-container matColumnDef="batteryVoltage">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Batterie</th>
+      <td mat-cell *matCellDef="let element">{{ element.batteryVoltage | number:'1.2-2' }}V</td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+
+  <mat-paginator 
+    [pageSizeOptions]="[5, 10, 20, 50, 100]"
+    showFirstLastButtons
+    aria-label="Sélectionner une page de données">
+  </mat-paginator>
+
+  <div class="no-data" *ngIf="data.length === 0">
+    <mat-icon>inbox</mat-icon>
+    <p>Aucune donnée disponible</p>
+  </div>
+</div>

@@ -1,0 +1,50 @@
+<mat-card class="connection-card">
+  <mat-card-content>
+    <div class="connection-status" *ngIf="!isConnected && !isConnecting">
+      <mat-icon class="status-icon disconnected">bluetooth_disabled</mat-icon>
+      <h3>Appareil non connecté</h3>
+      <p>Connectez-vous à votre datalogger ESP32 pour commencer</p>
+      <button mat-raised-button color="primary" (click)="connect()" [disabled]="!isBluetoothAvailable">
+        <mat-icon>bluetooth_searching</mat-icon>
+        Rechercher des appareils
+      </button>
+      <div *ngIf="!isBluetoothAvailable" class="bluetooth-warning">
+        <mat-icon>warning</mat-icon>
+        <span>Bluetooth non disponible sur ce navigateur</span>
+      </div>
+    </div>
+
+    <div class="connection-status" *ngIf="isConnecting">
+      <mat-spinner diameter="50"></mat-spinner>
+      <h3>Connexion en cours...</h3>
+      <p>Recherche d'appareils Bluetooth à proximité</p>
+      <button mat-stroked-button (click)="cancelConnection()">
+        Annuler
+      </button>
+    </div>
+
+    <div class="connection-status" *ngIf="isConnected && connectedDevice">
+      <mat-icon class="status-icon connected">bluetooth_connected</mat-icon>
+      <h3>Connecté à {{ connectedDevice.name }}</h3>
+      <p>
+        <strong>ID:</strong> {{ connectedDevice.id }}<br>
+        <strong>Signal:</strong> {{ connectedDevice.rssi || 'N/A' }} dBm
+      </p>
+      <div class="connection-actions">
+        <button mat-raised-button color="accent" routerLink="/dashboard">
+          <mat-icon>dashboard</mat-icon>
+          Tableau de bord
+        </button>
+        <button mat-stroked-button color="warn" (click)="disconnect()">
+          <mat-icon>bluetooth_disabled</mat-icon>
+          Déconnecter
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="errorMessage" class="error-message">
+      <mat-icon>error</mat-icon>
+      <span>{{ errorMessage }}</span>
+    </div>
+  </mat-card-content>
+</mat-card>
