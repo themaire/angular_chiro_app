@@ -19,14 +19,16 @@ export class BluetoothService {
   public dataReceived$ = this.dataReceivedSubject.asObservable();
   public connectionError$ = this.connectionErrorSubject.asObservable();
 
-  // Service UUID pour le datalogger ESP32
+  // Service UUID pour le datalogger ESP32 (correspond exactement à l'ESP32)
   private serviceUuid = '12345678-1234-1234-1234-123456789abc';
-  private characteristicUuid = '87654321-4321-4321-4321-cba987654321';
+  private characteristicDataUuid = '87654321-4321-4321-4321-cba987654321';
+  private characteristicStatusUuid = '11111111-2222-3333-4444-555555555555';
 
   private device: BluetoothDevice | null = null;
   private server: BluetoothRemoteGATTServer | null = null;
   private service: BluetoothRemoteGATTService | null = null;
-  private characteristic: BluetoothRemoteGATTCharacteristic | null = null;
+  private dataCharacteristic: BluetoothRemoteGATTCharacteristic | null = null;
+  private statusCharacteristic: BluetoothRemoteGATTCharacteristic | null = null;
   private isConnecting = false;
 
   constructor() { }
@@ -80,17 +82,25 @@ export class BluetoothService {
         ],
         optionalServices: [this.serviceUuid]
       });
-
+    
       // Se connecter au dispositif
       if (this.device.gatt) {
         this.server = await this.device.gatt.connect();
         this.service = await this.server.getPrimaryService(this.serviceUuid);
-        this.characteristic = await this.service.getCharacteristic(this.characteristicUuid);
+        
+        // Obtenir les deux caractéristiques
+        this.dataCharacteristic = await this.service.getCharacteristic(this.characteristicDataUuid);
+        this.statusCharacteristic = await this.service.getCharacteristic(this.characteristicStatusUuid);
 
-        // Écouter les notifications
-        await this.characteristic.startNotifications();
-        this.characteristic.addEventListener('characteristicvaluechanged', 
+        // Écouter les notifications sur les données
+        await this.dataCharacteristic.startNotifications();
+        this.dataCharacteristic.addEventListener('characteristicvaluechanged', 
           this.handleDataReceived.bind(this));
+
+        // Écouter les notifications sur le statut
+        await this.statusCharacteristic.startNotifications();
+        this.statusCharacteristic.addEventListener('characteristicvaluechanged', 
+          this.handleStatusReceived.bind(this));
 
         // Mettre à jour l'état
         const deviceInfo: DeviceInfo = {
@@ -104,9 +114,9 @@ export class BluetoothService {
         const appDevice: AppBluetoothDevice = {
           id: this.device.id,
           name: this.device.name || 'ChiroLogger',
-          rssi: undefined // Non disponible via Web Bluetooth
+          rssi: undefined
         };
-
+      
         this.currentDeviceSubject.next(deviceInfo);
         this.connectedDeviceSubject.next(appDevice);
         this.isConnectedSubject.next(true);
@@ -134,7 +144,8 @@ export class BluetoothService {
     this.device = null;
     this.server = null;
     this.service = null;
-    this.characteristic = null;
+    this.dataCharacteristic = null;
+    this.statusCharacteristic = null;
     this.isConnecting = false;
 
     this.isConnectedSubject.next(false);
@@ -143,20 +154,7 @@ export class BluetoothService {
   }
 
   /**
-   * Envoyer une commande au datalogger
-   */
-  async sendCommand(command: string): Promise<void> {
-    if (!this.characteristic) {
-      throw new Error('Pas de connexion active');
-    }
-
-    const encoder = new TextEncoder();
-    const data = encoder.encode(command);
-    await this.characteristic.writeValue(data);
-  }
-
-  /**
-   * Traiter les données reçues
+   * Traiter les données reçues (caractéristique data)
    */
   private handleDataReceived(event: Event): void {
     const target = event.target as unknown as BluetoothRemoteGATTCharacteristic;
@@ -184,6 +182,45 @@ export class BluetoothService {
         console.error('Erreur de parsing des données:', error);
       }
     }
+  }
+
+  /**
+   * Traiter les messages de statut reçus
+   */
+  private handleStatusReceived(event: Event): void {
+    const target = event.target as unknown as BluetoothRemoteGATTCharacteristic;
+    const value = target.value;
+
+    if (value) {
+      const decoder = new TextDecoder();
+      const statusMessage = decoder.decode(value);
+      
+      console.log('Statut reçu:', statusMessage);
+      
+      // Vous pouvez traiter différents messages de statut
+      if (statusMessage.includes('BATTERY:')) {
+        // Traiter l'information de batterie
+        const batteryLevel = parseFloat(statusMessage.split(':')[1]);
+        console.log('Niveau de batterie:', batteryLevel);
+      } else if (statusMessage.includes('READY')) {
+        console.log('Datalogger prêt');
+      } else if (statusMessage.includes('DOWNLOAD_COMPLETE')) {
+        console.log('Téléchargement terminé');
+      }
+    }
+  }
+
+  /**
+   * Envoyer une commande au datalogger (utilise la caractéristique de statut)
+   */
+  async sendCommand(command: string): Promise<void> {
+    if (!this.statusCharacteristic) {
+      throw new Error('Pas de connexion active');
+    }
+
+    const encoder = new TextEncoder();
+    const data = encoder.encode(command);
+    await this.statusCharacteristic.writeValue(data);
   }
 
   /**
