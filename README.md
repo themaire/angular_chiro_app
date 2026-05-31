@@ -8,7 +8,7 @@ Application web **Progressive Web App (PWA)** permettant la récupération sans 
 
 ## 🎯 Concept
 
-Le datalogger **LOLIN D32 PRO** (ESP32) est placé dans un boîtier étanche et enregistre en continu les données de température et d'humidité sur une carte micro SD au format CSV. Lorsque l'on souhaite récupérer les données, l'ESP32 est mis en **mode envoi** et cette application Angular se connecte sans fil via BLE pour extraire les fichiers, sans jamais ouvrir le boîtier.
+Le datalogger **LOLIN C3 Mini** (ESP32-C3) est placé dans un boîtier étanche et enregistre en continu les données de température et d'humidité (capteur SHT45) sur une carte micro SD au format CSV. Lorsque l'on souhaite récupérer les données, l'ESP32 est mis en **mode transfert** (pression sur le bouton GPIO2) et cette application Angular se connecte sans fil via BLE pour extraire les mesures, sans jamais ouvrir le boîtier.
 
 ## 🧪 Contexte scientifique
 
@@ -24,19 +24,23 @@ Projet de surveillance environnementale pour l'étude des **chiroptères** (chau
 
 - Scan par nom de dispositif (`ChiroLogger`)
 - Connexion via Web Bluetooth API avec deux caractéristiques GATT :
-  - `DATA` : réception des lignes CSV en notifications
-  - `STATUS` : envoi de commandes et réception des messages d'état
+  - `DATA` (`READ + NOTIFY`) : réception du CSV ligne par ligne
+  - `STATUS` (`READ + WRITE`) : lecture de l'état initial (`READY`)
+- Gestion automatique de la déconnexion inattendue → retour à l'accueil
 - Observables RxJS pour l'état de connexion en temps réel
 
 ### 📊 Visualisation
 
-- Graphiques temporels (température, humidité, pression)
+- Barre de progression du transfert avec compteur ligne par ligne
+- Spinner d'attente pendant les 2-3 secondes avant le premier paquet
+- Résumé automatique à la fin : *(N mesures entre le JJ/MM/AAAA et le JJ/MM/AAAA)*
+- Graphiques temporels (température, humidité, batterie)
 - Tableau de données paginé et triable
-- Indicateur de niveau de batterie du datalogger
+- Cartes de synthèse : température, humidité, batterie (%), tension (V)
 
 ### 💾 Données
 
-- Parsing automatique des lignes CSV reçues via BLE
+- Parsing automatique du protocole CSV envoyé par l'ESP32 via NOTIFY
 - Stockage local pour consultation hors-ligne
 - Export CSV
 
@@ -48,16 +52,30 @@ Projet de surveillance environnementale pour l'étude des **chiroptères** (chau
 
 ## 🔌 Configuration BLE
 
-Les UUIDs GATT correspondent exactement à ceux définis dans le firmware ESP32 :
+Les UUIDs GATT correspondent exactement à ceux définis dans le firmware ESP32 (`ble_manager.h`) :
 
-| Élément | UUID |
-|---|---|
-| Nom du dispositif | `ChiroLogger` |
-| Service | `12345678-1234-1234-1234-123456789abc` |
-| Caractéristique DATA | `87654321-4321-4321-4321-cba987654321` |
-| Caractéristique STATUS | `11111111-2222-3333-4444-555555555555` |
+| Élément | UUID | Propriétés |
+| --- | --- | --- |
+| Nom du dispositif | `ChiroLogger` | — |
+| Service | `12345678-1234-1234-1234-123456789abc` | — |
+| Caractéristique DATA | `87654321-4321-4321-4321-cba987654321` | READ + NOTIFY |
+| Caractéristique STATUS | `11111111-2222-3333-4444-555555555555` | READ + WRITE |
 
-> **Note** : Web Bluetooth API exige les UUIDs en **minuscules**. L'ESP32 doit advertiser son service UUID via `pAdvertising->addServiceUUID(BLE_SERVICE_UUID)`.
+> [!IMPORTANT]
+> Web Bluetooth API exige des UUIDs en **minuscules**. Le filtre `requestDevice()` utilise uniquement `namePrefix: 'ChiroLogger'` — le filtre `services` est intentionnellement absent car l'ESP32 NimBLE n'advertise pas son UUID de service (causerait *"No Services matching UUID found"*).
+
+### Protocole de transfert
+
+L'ESP32 envoie un paquet NOTIFY distinct pour chaque ligne, dans l'ordre suivant :
+
+```
+###META:lines=100###          ← nombre total de lignes attendues
+ID,DateTime,Temperature_C,Humidity_%,Battery_%,Battery_V   ← en-tête (ignoré)
+1,2024-01-15 10:30:00,18.5,75.2,85,3.8
+2,2024-01-15 10:45:00,18.3,76.1,84,3.7
+...                           ← une ligne par NOTIFY
+###EOF###                     ← fin de transfert
+```
 
 ## 🛠️ Technologies
 
@@ -108,11 +126,14 @@ ng build
 
 ## 📱 Utilisation
 
-1. **Préparer le datalogger** : mettre l'ESP32 en mode "envoi des données" (BLE actif)
-2. **Ouvrir l'application** dans Chrome sur Android ou desktop
-3. **Cliquer sur "Rechercher des appareils"** → sélectionner `ChiroLogger`
-4. **Associer** → les données sont récupérées automatiquement
-5. **Consulter** les graphiques ou le tableau, exporter en CSV si besoin
+1. **Préparer le datalogger** : appuyer sur le bouton GPIO2 de l'ESP32 pour activer le mode transfert BLE
+2. **Ouvrir l'application** dans Chrome sur Android ou desktop (en HTTPS)
+3. **Cliquer sur "Rechercher des appareils"** → sélectionner `ChiroLogger` dans la liste du navigateur
+4. **Connexion établie** → naviguer vers le tableau de bord
+5. **Transfert automatique** : spinner d'attente → barre de progression ligne par ligne → résumé final
+6. **Consulter** les graphiques ou le tableau, exporter en CSV si besoin
+
+> En cas de perte de connexion BLE pendant le transfert, l'application revient automatiquement à l'accueil.
 
 ## 🏗️ Architecture
 
@@ -136,11 +157,15 @@ src/app/
 
 ## 📊 Format des données CSV
 
+Format envoyé par le capteur SHT45 (sans pression atmosphérique) :
+
 ```csv
-timestamp,temperature,humidity,pressure,batteryVoltage
-2026-01-15T10:30:00.000Z,18.5,75.2,1013.25,3.8
-2026-01-15T10:45:00.000Z,18.3,76.1,1013.18,3.8
+ID,DateTime,Temperature_C,Humidity_%,Battery_%,Battery_V
+1,2024-01-15 10:30:00,18.5,75.2,85,3.8
+2,2024-01-15 10:45:00,18.3,76.1,84,3.7
 ```
+
+> Le champ `DateTime` est au format `YYYY-MM-DD HH:MM:SS` (heure locale de l'ESP32 via RTC).
 
 ## 🔐 Compatibilité
 
@@ -155,13 +180,19 @@ timestamp,temperature,humidity,pressure,batteryVoltage
 ## 🐛 Dépannage
 
 **"No Services matching UUID found"**
-→ L'ESP32 n'advertise pas son service UUID. Vérifier que le firmware appelle `pAdvertising->addServiceUUID(BLE_SERVICE_UUID)`.
+→ Erreur normale si le firmware advertise l'UUID de service. Le service Angular utilise uniquement le filtre `namePrefix` pour l'éviter.
 
 **"Invalid Service name"**
-→ Les UUIDs doivent être en minuscules côté JavaScript.
+→ Les UUIDs doivent être en **minuscules** côté JavaScript.
 
 **Le scan ne trouve pas ChiroLogger**
-→ Vérifier que l'ESP32 est bien en mode "envoi", que le Bluetooth du téléphone est activé, et que l'application est servie en HTTPS.
+→ Vérifier que l'ESP32 est en mode transfert (LED BLE active), que le Bluetooth est activé sur le téléphone, et que l'application est servie en HTTPS.
+
+**Le dashboard reste vide après connexion**
+→ Attendre le spinner (~2-3 s) : l'ESP32 démarre son moteur de transfert avant d'envoyer le premier paquet. Si aucune donnée n'arrive après 10 s, vérifier les logs série de l'ESP32.
+
+**La barre de progression ne bouge pas**
+→ Vérifier que le firmware envoie bien `###META:lines=N###` en premier paquet NOTIFY.
 
 **Application ne démarre pas**
 → Supprimer `node_modules/` et relancer `npm install`. Vérifier Node.js ≥ 18.
@@ -171,11 +202,6 @@ timestamp,temperature,humidity,pressure,batteryVoltage
 - [Firmware ESP32 - Chiro Logger](https://github.com/themaire/chiro_logger)
 - [Web Bluetooth API - MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API)
 - [Angular Documentation](https://angular.io/docs)
-
----
-
-*Projet développé pour l'étude scientifique des chiroptères.*
-- [Angular Material](https://material.angular.io/)
 
 ---
 

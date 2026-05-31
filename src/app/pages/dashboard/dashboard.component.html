@@ -8,6 +8,33 @@
   </div>
 
   <div class="dashboard-content" *ngIf="isConnected; else noConnection">
+
+    <!-- Spinner : connexion établie, en attente du premier paquet de données -->
+    <div class="transfer-progress transfer-progress--waiting" *ngIf="isWaitingForData">
+      <div class="transfer-progress-label">
+        <mat-spinner diameter="18"></mat-spinner>
+        <span>Connexion à la sonde, en attente des données…</span>
+      </div>
+    </div>
+
+    <!-- Barre de progression du transfert BLE (visible pendant le téléchargement) -->
+    <div class="transfer-progress" *ngIf="!isWaitingForData && (progress$ | async) as pct">
+      <div class="transfer-progress-label">
+        <mat-icon>bluetooth_searching</mat-icon>
+        <ng-container *ngIf="pct < 100">
+          <span>Réception des données…</span>
+          <span class="transfer-count" *ngIf="(transferCount$ | async) as count">
+            ligne {{ count.received }} / {{ count.total }}
+          </span>
+          <span class="transfer-pct">{{ pct }}%</span>
+        </ng-container>
+        <ng-container *ngIf="pct === 100">
+          <span>Transfert terminé ✓ <em class="transfer-summary">{{ getDateRangeSummary() }}</em></span>
+        </ng-container>
+      </div>
+      <mat-progress-bar mode="determinate" [value]="pct"></mat-progress-bar>
+    </div>
+
     <div class="stats-grid">
       <mat-card class="stat-card">
         <mat-card-content>
