@@ -70,16 +70,17 @@ export class DataLoggerService {
    * Exporter les données d'une session en CSV
    */
   exportSessionToCsv(session: DataLoggerSession): string {
-    const headers = ['Timestamp', 'Temperature (°C)', 'Humidity (%)', 'Pressure (hPa)', 'Battery (V)'];
+    const headers = ['ID', 'Timestamp', 'Temperature (°C)', 'Humidity (%)', 'Battery (%)', 'Battery (V)'];
     const csvLines = [headers.join(',')];
 
     session.data.forEach(data => {
       const line = [
+        data.id,
         data.timestamp.toISOString(),
         data.temperature.toFixed(2),
         data.humidity.toFixed(1),
-        data.pressure.toFixed(1),
-        data.batteryVoltage.toFixed(2)
+        data.batteryPercent != null ? data.batteryPercent.toFixed(1) : '',
+        data.batteryVoltage != null ? data.batteryVoltage.toFixed(2) : ''
       ];
       csvLines.push(line.join(','));
     });
@@ -127,7 +128,6 @@ export class DataLoggerService {
 
     const temperatures = session.data.map(d => d.temperature);
     const humidities = session.data.map(d => d.humidity);
-    const pressures = session.data.map(d => d.pressure);
 
     return {
       temperatureMin: Math.min(...temperatures),
@@ -136,9 +136,6 @@ export class DataLoggerService {
       humidityMin: Math.min(...humidities),
       humidityMax: Math.max(...humidities),
       humidityAvg: humidities.reduce((a, b) => a + b, 0) / humidities.length,
-      pressureMin: Math.min(...pressures),
-      pressureMax: Math.max(...pressures),
-      pressureAvg: pressures.reduce((a, b) => a + b, 0) / pressures.length,
       duration: session.endTime ? 
         session.endTime.getTime() - session.startTime.getTime() : 
         Date.now() - session.startTime.getTime(),
@@ -186,16 +183,17 @@ export class DataLoggerService {
       return;
     }
 
-    const headers = ['Timestamp', 'Temperature (°C)', 'Humidity (%)', 'Pressure (hPa)', 'Battery (V)'];
+    const headers = ['ID', 'Timestamp', 'Temperature (°C)', 'Humidity (%)', 'Battery (%)', 'Battery (V)'];
     const csvLines = [headers.join(',')];
 
     allData.forEach(data => {
       const line = [
+        data.id,
         data.timestamp.toISOString(),
         data.temperature.toFixed(2),
         data.humidity.toFixed(1),
-        data.pressure.toFixed(1),
-        data.batteryVoltage.toFixed(2)
+        data.batteryPercent != null ? data.batteryPercent.toFixed(1) : '',
+        data.batteryVoltage != null ? data.batteryVoltage.toFixed(2) : ''
       ];
       csvLines.push(line.join(','));
     });

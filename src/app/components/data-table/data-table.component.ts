@@ -12,7 +12,7 @@ import { SensorData } from '../../models/sensor-data.interface';
 export class DataTableComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() data: SensorData[] = [];
   
-  displayedColumns: string[] = ['timestamp', 'temperature', 'humidity', 'pressure', 'batteryVoltage'];
+  displayedColumns: string[] = ['timestamp', 'temperature', 'humidity', 'batteryPercent', 'batteryVoltage'];
   dataSource = new MatTableDataSource<SensorData>([]);
   
   @ViewChild(MatPaginator) paginator!: MatPaginator;

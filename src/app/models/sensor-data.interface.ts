@@ -1,9 +1,11 @@
+// Format CSV ESP32 : ID,DateTime,Temperature_C,Humidity_%[,Battery_%,Battery_V]
 export interface SensorData {
+  id: number;
   timestamp: Date;
   temperature: number;
   humidity: number;
-  pressure: number;
-  batteryVoltage: number;
+  batteryPercent?: number;
+  batteryVoltage?: number;
 }
 
 export interface DeviceInfo {

@@ -32,20 +32,20 @@
       <mat-card class="stat-card">
         <mat-card-content>
           <div class="stat-icon">
-            <mat-icon>compress</mat-icon>
+            <mat-icon>battery_std</mat-icon>
           </div>
-          <div class="stat-value">{{ currentData?.pressure?.toFixed(0) || '--' }} hPa</div>
-          <div class="stat-label">Pression</div>
+          <div class="stat-value">{{ currentData?.batteryPercent != null ? (currentData?.batteryPercent?.toFixed(0) + '%') : '--' }}</div>
+          <div class="stat-label">Batterie</div>
         </mat-card-content>
       </mat-card>
 
       <mat-card class="stat-card">
         <mat-card-content>
           <div class="stat-icon">
-            <mat-icon>battery_std</mat-icon>
+            <mat-icon>battery_charging_full</mat-icon>
           </div>
-          <div class="stat-value">{{ currentData?.batteryVoltage?.toFixed(2) || '--' }}V</div>
-          <div class="stat-label">Batterie</div>
+          <div class="stat-value">{{ currentData?.batteryVoltage != null ? (currentData?.batteryVoltage?.toFixed(2) + 'V') : '--' }}</div>
+          <div class="stat-label">Tension</div>
         </mat-card-content>
       </mat-card>
     </div>

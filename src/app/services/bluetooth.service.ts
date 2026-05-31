@@ -19,16 +19,16 @@ export class BluetoothService {
   public dataReceived$ = this.dataReceivedSubject.asObservable();
   public connectionError$ = this.connectionErrorSubject.asObservable();
 
-  // Service UUID pour le datalogger ESP32 (correspond exactement à l'ESP32)
+  // UUIDs GATT - doivent correspondre EXACTEMENT au firmware ESP32 (ble_manager.h)
+  // Web Bluetooth exige des UUIDs en minuscules
   private serviceUuid = '12345678-1234-1234-1234-123456789abc';
   private characteristicDataUuid = '87654321-4321-4321-4321-cba987654321';
-  private characteristicStatusUuid = '11111111-2222-3333-4444-555555555555';
+  // Note : la caractéristique STATUS n'existe pas encore dans le firmware ESP32 actuel
 
   private device: BluetoothDevice | null = null;
   private server: BluetoothRemoteGATTServer | null = null;
   private service: BluetoothRemoteGATTService | null = null;
   private dataCharacteristic: BluetoothRemoteGATTCharacteristic | null = null;
-  private statusCharacteristic: BluetoothRemoteGATTCharacteristic | null = null;
   private isConnecting = false;
 
   constructor() { }
@@ -74,11 +74,12 @@ export class BluetoothService {
     this.isConnecting = true;
 
     try {
-      // Scanner les dispositifs
+      // Scanner les dispositifs.
+      // Le filtre 'services' est retiré intentionnellement : l'ESP32 n'advertise
+      // pas son UUID de service, ce qui causerait "No Services matching UUID found".
       this.device = await navigator.bluetooth.requestDevice({
         filters: [
-          { namePrefix: 'ChiroLogger' },
-          { services: [this.serviceUuid] }
+          { namePrefix: 'ChiroLogger' }
         ],
         optionalServices: [this.serviceUuid]
       });
@@ -87,20 +88,18 @@ export class BluetoothService {
       if (this.device.gatt) {
         this.server = await this.device.gatt.connect();
         this.service = await this.server.getPrimaryService(this.serviceUuid);
-        
-        // Obtenir les deux caractéristiques
-        this.dataCharacteristic = await this.service.getCharacteristic(this.characteristicDataUuid);
-        this.statusCharacteristic = await this.service.getCharacteristic(this.characteristicStatusUuid);
 
-        // Écouter les notifications sur les données
+        // Seule la caractéristique DATA existe dans le firmware ESP32 actuel
+        this.dataCharacteristic = await this.service.getCharacteristic(this.characteristicDataUuid);
+
+        // S'abonner aux notifications (NOTIFY) avant de déclencher le READ
         await this.dataCharacteristic.startNotifications();
-        this.dataCharacteristic.addEventListener('characteristicvaluechanged', 
+        this.dataCharacteristic.addEventListener('characteristicvaluechanged',
           this.handleDataReceived.bind(this));
 
-        // Écouter les notifications sur le statut
-        await this.statusCharacteristic.startNotifications();
-        this.statusCharacteristic.addEventListener('characteristicvaluechanged', 
-          this.handleStatusReceived.bind(this));
+        // Déclencher ESP_GATTS_READ_EVT côté ESP32 :
+        // c'est le READ qui provoque l'envoi des données via send_indicate()
+        await this.dataCharacteristic.readValue();
 
         // Mettre à jour l'état
         const deviceInfo: DeviceInfo = {
@@ -145,7 +144,6 @@ export class BluetoothService {
     this.server = null;
     this.service = null;
     this.dataCharacteristic = null;
-    this.statusCharacteristic = null;
     this.isConnecting = false;
 
     this.isConnectedSubject.next(false);
@@ -154,93 +152,69 @@ export class BluetoothService {
   }
 
   /**
-   * Traiter les données reçues (caractéristique data)
+   * Traiter les données reçues via NOTIFY (déclenchées par un READ).
+   *
+   * Format CSV envoyé par le firmware ESP32 (ble_manager.c) :
+   * Bloc multi-lignes : "ID,DateTime,Temperature_C,Humidity_%\n1,1672531200,18.5,85.0\n..."
+   *
+   * La première ligne est le header (ignorée).
+   * Colonnes : ID, DateTime (timestamp Unix ou ISO), Temperature_C, Humidity_%
    */
   private handleDataReceived(event: Event): void {
     const target = event.target as unknown as BluetoothRemoteGATTCharacteristic;
     const value = target.value;
 
-    if (value) {
-      const decoder = new TextDecoder();
-      const csvLine = decoder.decode(value);
-      
+    if (!value) return;
+
+    const decoder = new TextDecoder();
+    const rawText = decoder.decode(value);
+    console.log('Données BLE reçues brutes:', rawText);
+
+    const lines = rawText.trim().split('\n');
+
+    // Ignorer la ligne d'en-tête CSV
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
       try {
-        // Parser une ligne CSV: timestamp,temperature,humidity,pressure,battery
-        const parts = csvLine.trim().split(',');
-        if (parts.length >= 5) {
-          const sensorData: SensorData = {
-            timestamp: new Date(parts[0]),
-            temperature: parseFloat(parts[1]),
-            humidity: parseFloat(parts[2]),
-            pressure: parseFloat(parts[3]),
-            batteryVoltage: parseFloat(parts[4])
-          };
-
-          this.dataReceivedSubject.next(sensorData);
+        // Format : ID,DateTime,Temperature_C,Humidity_%[,Battery_%,Battery_V]
+        const parts = line.split(',');
+        if (parts.length < 4) {
+          console.warn('Ligne CSV invalide (< 4 colonnes):', line);
+          continue;
         }
+
+        // DateTime peut être un timestamp Unix (secondes) ou une chaîne ISO
+        const rawDate = parts[1].trim();
+        const dateValue = /^\d+$/.test(rawDate)
+          ? new Date(parseInt(rawDate, 10) * 1000)
+          : new Date(rawDate);
+
+        const sensorData: SensorData = {
+          id: parseInt(parts[0]),
+          timestamp: dateValue,
+          temperature: parseFloat(parts[2]),
+          humidity: parseFloat(parts[3]),
+          batteryPercent: parts.length > 4 ? parseFloat(parts[4]) : undefined,
+          batteryVoltage: parts.length > 5 ? parseFloat(parts[5]) : undefined
+        };
+
+        this.dataReceivedSubject.next(sensorData);
       } catch (error) {
-        console.error('Erreur de parsing des données:', error);
+        console.error('Erreur de parsing ligne CSV:', line, error);
       }
     }
   }
 
   /**
-   * Traiter les messages de statut reçus
-   */
-  private handleStatusReceived(event: Event): void {
-    const target = event.target as unknown as BluetoothRemoteGATTCharacteristic;
-    const value = target.value;
-
-    if (value) {
-      const decoder = new TextDecoder();
-      const statusMessage = decoder.decode(value);
-      
-      console.log('Statut reçu:', statusMessage);
-      
-      // Vous pouvez traiter différents messages de statut
-      if (statusMessage.includes('BATTERY:')) {
-        // Traiter l'information de batterie
-        const batteryLevel = parseFloat(statusMessage.split(':')[1]);
-        console.log('Niveau de batterie:', batteryLevel);
-      } else if (statusMessage.includes('READY')) {
-        console.log('Datalogger prêt');
-      } else if (statusMessage.includes('DOWNLOAD_COMPLETE')) {
-        console.log('Téléchargement terminé');
-      }
-    }
-  }
-
-  /**
-   * Envoyer une commande au datalogger (utilise la caractéristique de statut)
-   */
-  async sendCommand(command: string): Promise<void> {
-    if (!this.statusCharacteristic) {
-      throw new Error('Pas de connexion active');
-    }
-
-    const encoder = new TextEncoder();
-    const data = encoder.encode(command);
-    await this.statusCharacteristic.writeValue(data);
-  }
-
-  /**
-   * Demander le téléchargement de toutes les données
+   * Déclencher manuellement un nouveau téléchargement de données.
+   * Le firmware ESP32 envoie les données en réponse à un READ (ESP_GATTS_READ_EVT).
    */
   async requestDataDownload(): Promise<void> {
-    await this.sendCommand('DOWNLOAD_ALL');
-  }
-
-  /**
-   * Demander l'état de la batterie
-   */
-  async requestBatteryStatus(): Promise<void> {
-    await this.sendCommand('BATTERY_STATUS');
-  }
-
-  /**
-   * Effacer les données du datalogger
-   */
-  async clearData(): Promise<void> {
-    await this.sendCommand('CLEAR_DATA');
+    if (!this.dataCharacteristic) {
+      throw new Error('Pas de connexion active');
+    }
+    await this.dataCharacteristic.readValue();
   }
 }

@@ -17,17 +17,17 @@
       </button>
       <button 
         mat-button 
-        [class.active]="selectedMetric === 'pressure'"
-        (click)="setMetric('pressure')">
-        <mat-icon>compress</mat-icon>
-        Pression
+        [class.active]="selectedMetric === 'batteryPercent'"
+        (click)="setMetric('batteryPercent')">
+        <mat-icon>battery_std</mat-icon>
+        Batterie (%)
       </button>
       <button 
         mat-button 
         [class.active]="selectedMetric === 'batteryVoltage'"
         (click)="setMetric('batteryVoltage')">
-        <mat-icon>battery_std</mat-icon>
-        Batterie
+        <mat-icon>battery_charging_full</mat-icon>
+        Batterie (V)
       </button>
     </div>
   </div>

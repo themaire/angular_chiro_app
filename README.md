@@ -1,253 +1,180 @@
 # 🦇 Chiro Logger - Application Web Angular
 
-## 📱 Application de consultation pour datalogger environnemental
+Application web **Progressive Web App (PWA)** permettant la récupération sans contact physique des données environnementales enregistrées par le [datalogger ESP32 Chiro Logger](https://github.com/themaire/chiro_logger) via **Bluetooth Low Energy (Web Bluetooth API)**.
 
-Cette application web Angular (PWA) permet de consulter et récupérer les données environnementales collectées par le [datalogger ESP32 pour chiroptères](https://github.com/themaire/chiro_logger) via une connexion Bluetooth Low Energy (BLE) **sans contact physique**.
+> [!NOTE]
+> **Qu'est-ce qu'une PWA ?**
+> Une *Progressive Web App* est une application web qui s'installe directement depuis le navigateur (sans passer par un store), fonctionne **hors-ligne** grâce au cache du Service Worker, et se comporte comme une application native sur mobile et desktop. Elle combine la portabilité du web et les capacités des apps natives : accès au Bluetooth, notifications, écran plein écran, etc.
 
-## 🎯 Objectif
+## 🎯 Concept
 
-Fournir une interface utilisateur moderne et intuitive pour :
-
-- Se connecter au datalogger ESP32 LOLIN D32 PRO via Web Bluetooth
-- Récupérer les données de température, humidité et pression atmosphérique
-- Visualiser les données sous forme de graphiques et tableaux
-- Exporter les données au format CSV pour analyse
+Le datalogger **LOLIN D32 PRO** (ESP32) est placé dans un boîtier étanche et enregistre en continu les données de température et d'humidité sur une carte micro SD au format CSV. Lorsque l'on souhaite récupérer les données, l'ESP32 est mis en **mode envoi** et cette application Angular se connecte sans fil via BLE pour extraire les fichiers, sans jamais ouvrir le boîtier.
 
 ## 🧪 Contexte scientifique
 
-Cette application accompagne un système de surveillance environnementale conçu pour l'étude des chiroptères (chauves-souris) dans leurs habitats naturels. Elle respecte les contraintes scientifiques suivantes :
+Projet de surveillance environnementale pour l'étude des **chiroptères** (chauves-souris) dans leurs habitats naturels :
 
-- **Non-intrusive** : récupération des données sans manipulation physique du boîtier
-- **Précision** : préservation de l'intégrité des mesures horodatées
-- **Autonomie** : fonctionnement en mode hors-ligne grâce à la technologie PWA
+- **Non-intrusive** : aucune manipulation physique du boîtier étanche
+- **Précision** : données horodatées préservées intégralement
+- **Autonomie** : fonctionne hors-ligne grâce à la PWA
 
 ## ⚙️ Fonctionnalités
 
 ### 📲 Connexion Bluetooth
 
-- **Scan automatique** des dispositifs ESP32 à proximité
-- **Connexion sécurisée** via Web Bluetooth API
-- **Statut de connexion** en temps réel
-- **Gestion des erreurs** de connexion
+- Scan par nom de dispositif (`ChiroLogger`)
+- Connexion via Web Bluetooth API avec deux caractéristiques GATT :
+  - `DATA` : réception des lignes CSV en notifications
+  - `STATUS` : envoi de commandes et réception des messages d'état
+- Observables RxJS pour l'état de connexion en temps réel
 
-### 📊 Visualisation des données
+### 📊 Visualisation
 
-- **Graphiques temporels** des mesures (température, humidité, pression)
-- **Tableau de données** avec pagination et tri
-- **Indicateurs de batterie** du datalogger
-- **Informations du dispositif** (nom, MAC, dernière synchronisation)
+- Graphiques temporels (température, humidité, pression)
+- Tableau de données paginé et triable
+- Indicateur de niveau de batterie du datalogger
 
-### 💾 Gestion des données
+### 💾 Données
 
-- **Récupération automatique** des fichiers CSV depuis la carte SD
-- **Stockage local** des données pour consultation hors-ligne
-- **Export CSV** pour traitement dans des logiciels externes
-- **Historique des sessions** de collecte
+- Parsing automatique des lignes CSV reçues via BLE
+- Stockage local pour consultation hors-ligne
+- Export CSV
 
-### 📱 Progressive Web App (PWA)
+### 📱 PWA
 
-- **Installation** sur smartphone/tablette
-- **Fonctionnement hors-ligne**
-- **Interface responsive** optimisée mobile
-- **Notifications** de statut de connexion
+- Installable sur Android (Chrome)
+- Fonctionne hors-ligne
+- Interface responsive optimisée mobile
 
-## 🛠️ Technologies utilisées
+## 🔌 Configuration BLE
 
-- **Angular 16** - Framework principal
-- **Angular Material** - Composants UI
-- **RxJS** - Programmation réactive
-- **Web Bluetooth API** - Communication BLE
-- **Chart.js** - Graphiques de données
-- **Service Worker** - Fonctionnalités PWA
+Les UUIDs GATT correspondent exactement à ceux définis dans le firmware ESP32 :
+
+| Élément | UUID |
+|---|---|
+| Nom du dispositif | `ChiroLogger` |
+| Service | `12345678-1234-1234-1234-123456789abc` |
+| Caractéristique DATA | `87654321-4321-4321-4321-cba987654321` |
+| Caractéristique STATUS | `11111111-2222-3333-4444-555555555555` |
+
+> **Note** : Web Bluetooth API exige les UUIDs en **minuscules**. L'ESP32 doit advertiser son service UUID via `pAdvertising->addServiceUUID(BLE_SERVICE_UUID)`.
+
+## 🛠️ Technologies
+
+| Technologie | Version | Rôle |
+|---|---|---|
+| Angular | 16 | Framework principal |
+| Angular Material | 16 | Composants UI |
+| RxJS | 7.8 | Programmation réactive |
+| Web Bluetooth API | — | Communication BLE |
+| Angular Service Worker | 16 | Fonctionnalités PWA |
 
 ## 🚀 Installation et lancement
 
 ### Prérequis
 
-- Node.js (version 18 ou supérieure)
-- Angular CLI (`npm install -g @angular/cli`)
-- Navigateur compatible Web Bluetooth (Chrome, Edge, Opera)
+- Node.js ≥ 18
+- Angular CLI : `npm install -g @angular/cli`
+- Chrome ou Edge (Web Bluetooth requis)
 
-### Installation
+### Développement desktop
 
 ```bash
-# Cloner le repository
-git clone <url-du-repository>
+git clone https://github.com/themaire/angular_chiro_app.git
 cd angular_chiro_app
-
-# Installer les dépendances
 npm install
-
-# Lancer l'application en mode développement
 ng serve
+# Ouvrir http://localhost:4200
 ```
 
-### Lancement pour mobile
+### Lancement mobile (HTTPS local requis par Web Bluetooth)
 
 ```bash
-# Servir l'application sur le réseau local
-npm run serve-mobile
-# ou
-ng serve --host 0.0.0.0 --port 4200
+# Rendre le script exécutable (première fois)
+chmod +x serve-mobile.sh
+
+# Lancer le serveur HTTPS local
+./serve-mobile.sh
+# Ouvrir https://192.168.0.120:4200 sur le mobile
+# Accepter le certificat auto-signé sur le téléphone
 ```
 
 ### Build de production
 
 ```bash
-# Build optimisé pour la production
-ng build --prod
-
-# Les fichiers sont générés dans le dossier dist/
+ng build
+# Fichiers générés dans dist/
 ```
 
 ## 📱 Utilisation
 
-### 1. Préparation du datalogger
+1. **Préparer le datalogger** : mettre l'ESP32 en mode "envoi des données" (BLE actif)
+2. **Ouvrir l'application** dans Chrome sur Android ou desktop
+3. **Cliquer sur "Rechercher des appareils"** → sélectionner `ChiroLogger`
+4. **Associer** → les données sont récupérées automatiquement
+5. **Consulter** les graphiques ou le tableau, exporter en CSV si besoin
 
-- Approcher un doigt ou badge du capteur capacitif du datalogger
-- Le mode "consultation" s'active automatiquement
-- Le module BLE devient détectable
-
-### 2. Connexion depuis l'application
-
-- Ouvrir l'application dans un navigateur compatible
-- Cliquer sur "Se connecter au datalogger"
-- Sélectionner le dispositif ESP32 dans la liste
-- La connexion s'établit automatiquement
-
-### 3. Consultation des données
-
-- Les données s'affichent automatiquement après connexion
-- Navigation entre vue graphique et tableau
-- Filtrage par période temporelle
-- Export CSV disponible via le menu
-
-## 🏗️ Architecture du projet
+## 🏗️ Architecture
 
 ```text
-src/
-├── app/
-│   ├── components/          # Composants UI réutilisables
-│   │   ├── chart-view/      # Graphiques de données
-│   │   ├── connection/      # Interface de connexion BLE
-│   │   └── data-table/      # Tableau de données
-│   ├── pages/               # Pages principales
-│   │   ├── dashboard/       # Page principale avec données
-│   │   └── home/            # Page d'accueil
-│   ├── services/            # Services métier
-│   │   ├── bluetooth.service.ts    # Gestion Web Bluetooth
-│   │   └── data-logger.service.ts  # Traitement des données
-│   ├── models/              # Interfaces TypeScript
-│   │   └── sensor-data.interface.ts
-│   └── types/               # Définitions de types
-│       └── bluetooth.d.ts
-├── assets/                  # Ressources statiques
-└── manifest.webmanifest     # Configuration PWA
+src/app/
+├── components/
+│   ├── chart-view/          # Graphiques temporels
+│   ├── connection/          # Interface de connexion BLE
+│   └── data-table/          # Tableau de données
+├── pages/
+│   ├── home/                # Page d'accueil + connexion
+│   └── dashboard/           # Visualisation des données
+├── services/
+│   ├── bluetooth.service.ts # Web Bluetooth API (scan, connexion, GATT)
+│   └── data-logger.service.ts # Parsing CSV, stockage, export
+├── models/
+│   └── sensor-data.interface.ts
+└── types/
+    └── bluetooth.d.ts
 ```
 
-## 🔧 Services principaux
-
-### BluetoothService
-
-Gère la communication avec le datalogger ESP32 :
-
-- Scan et connexion aux dispositifs BLE
-- Lecture des caractéristiques Bluetooth
-- Gestion des erreurs de connexion
-- Observables pour l'état de la connexion
-
-### DataLoggerService
-
-Traite les données reçues :
-
-- Parsing des fichiers CSV
-- Stockage local des données
-- Gestion de l'historique des sessions
-- Export des données
-
-## 📊 Format des données
-
-Le datalogger transmet les données au format CSV avec les colonnes suivantes :
+## 📊 Format des données CSV
 
 ```csv
 timestamp,temperature,humidity,pressure,batteryVoltage
-2024-01-15T10:30:00.000Z,18.5,75.2,1013.25,3.8
-2024-01-15T10:45:00.000Z,18.3,76.1,1013.18,3.8
+2026-01-15T10:30:00.000Z,18.5,75.2,1013.25,3.8
+2026-01-15T10:45:00.000Z,18.3,76.1,1013.18,3.8
 ```
 
-## 🔐 Sécurité et compatibilité
+## 🔐 Compatibilité
 
-### Navigateurs supportés
-
-- Chrome 56+ (Android/Desktop)
-- Edge 79+ (Windows/Android)
-- Opera 43+ (Android/Desktop)
-- Safari : **non supporté** (pas de Web Bluetooth)
-
-### Permissions requises
-
-- **Bluetooth** : pour la connexion aux dispositifs
-- **Stockage local** : pour la sauvegarde des données
-- **Géolocalisation** : optionnelle, pour la localisation des mesures
+| Navigateur | Support Web Bluetooth |
+|---|---|
+| Chrome Android 56+ | ✅ |
+| Chrome Desktop 56+ | ✅ |
+| Edge 79+ | ✅ |
+| Safari (iOS/macOS) | ❌ Non supporté |
+| Firefox | ❌ Non supporté |
 
 ## 🐛 Dépannage
 
-### Problèmes de connexion Bluetooth
+**"No Services matching UUID found"**
+→ L'ESP32 n'advertise pas son service UUID. Vérifier que le firmware appelle `pAdvertising->addServiceUUID(BLE_SERVICE_UUID)`.
 
-- Vérifier que le datalogger est en mode "consultation"
-- S'assurer que le navigateur supporte Web Bluetooth
-- Vérifier les permissions Bluetooth du site web
-- Redémarrer le Bluetooth si nécessaire
+**"Invalid Service name"**
+→ Les UUIDs doivent être en minuscules côté JavaScript.
 
-### Application ne se lance pas
+**Le scan ne trouve pas ChiroLogger**
+→ Vérifier que l'ESP32 est bien en mode "envoi", que le Bluetooth du téléphone est activé, et que l'application est servie en HTTPS.
 
-- Vérifier la version de Node.js (≥18)
-- Supprimer `node_modules` et relancer `npm install`
-- Vérifier les certificats HTTPS en développement
+**Application ne démarre pas**
+→ Supprimer `node_modules/` et relancer `npm install`. Vérifier Node.js ≥ 18.
 
-## 📈 Développement futur
+## 🔗 Liens
 
-### Fonctionnalités prévues
-
-- **Cartographie** des points de mesure
-- **Alertes** en cas de valeurs anormales
-- **Synchronisation cloud** optionnelle
-- **Mode multi-datalogger** pour gestion de plusieurs dispositifs
-- **Analyse statistique** avancée des données
-
-### Améliorations techniques
-
-- **Tests unitaires** complets
-- **Déploiement automatisé** (CI/CD)
-- **Optimisation** des performances
-- **Accessibilité** WCAG 2.1
-
-## 📝 Licence
-
-Ce projet est sous licence MIT - voir le fichier [LICENSE](LICENSE) pour plus de détails.
-
-## 🤝 Contribution
-
-Les contributions sont les bienvenues ! Merci de :
-
-1. Fork le projet
-2. Créer une branche pour votre fonctionnalité
-3. Commiter vos changements
-4. Pousser vers la branche
-5. Ouvrir une Pull Request
-
-## 📞 Contact
-
-Pour toute question ou suggestion concernant l'application :
-
-- **Issues** : [GitHub Issues](../../issues)
-- **Discussions** : [GitHub Discussions](../../discussions)
-
-## 🔗 Liens utiles
-
-- [Repository du datalogger ESP32](https://github.com/themaire/chiro_logger)
-- [Documentation Web Bluetooth API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API)
+- [Firmware ESP32 - Chiro Logger](https://github.com/themaire/chiro_logger)
+- [Web Bluetooth API - MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API)
 - [Angular Documentation](https://angular.io/docs)
+
+---
+
+*Projet développé pour l'étude scientifique des chiroptères.*
 - [Angular Material](https://material.angular.io/)
 
 ---

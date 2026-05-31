@@ -48,8 +48,8 @@ export class ChartViewComponent implements OnInit, OnChanges {
     switch (this.selectedMetric) {
       case 'temperature': return 'Température';
       case 'humidity': return 'Humidité';
-      case 'pressure': return 'Pression';
-      case 'batteryVoltage': return 'Batterie';
+      case 'batteryPercent': return 'Batterie (%)';
+      case 'batteryVoltage': return 'Batterie (V)';
       default: return 'Valeur';
     }
   }
@@ -97,8 +97,8 @@ export class ChartViewComponent implements OnInit, OnChanges {
       case 'humidity': 
         this.currentUnit = '%';
         break;
-      case 'pressure': 
-        this.currentUnit = ' hPa';
+      case 'batteryPercent': 
+        this.currentUnit = '%';
         break;
       case 'batteryVoltage': 
         this.currentUnit = 'V';
