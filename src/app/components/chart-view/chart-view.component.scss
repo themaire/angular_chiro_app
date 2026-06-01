@@ -72,23 +72,56 @@
 
 .simple-chart {
   position: relative;
-  height: 200px;
   width: 100%;
-  background: linear-gradient(to bottom, #f8f9fa 0%, #fff 100%);
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 20px;
-  box-sizing: border-box;
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.axis-y {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 8px 0;
+  min-width: 52px;
+  font-size: 0.72rem;
+  color: #666;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .chart-grid {
   position: relative;
-  height: 100%;
+  height: 280px;
   width: 100%;
+  background: linear-gradient(to bottom, #f8f9fa 0%, #fff 100%);
+  border: 1px solid #e0e0e0;
+  border-radius: 8px 8px 0 0;
   background-image: 
     linear-gradient(to right, #e0e0e0 1px, transparent 1px),
     linear-gradient(to bottom, #e0e0e0 1px, transparent 1px);
   background-size: 10% 25%;
+}
+
+.axis-x {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 4px 0;
+  font-size: 0.72rem;
+  color: #666;
+
+  .axis-x-unit {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #444;
+  }
 }
 
 .chart-line {
@@ -99,30 +132,63 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   transform: translate(-50%, 50%);
   transition: transform 0.2s ease;
+  cursor: pointer;
   
-  &:hover {
-    transform: translate(-50%, 50%) scale(1.2);
+  &:hover, &.active {
+    transform: translate(-50%, 50%) scale(1.5);
     z-index: 10;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.35);
   }
 }
 
-.chart-axis {
+.point-tooltip {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 40px;
+  transform: translate(-50%, calc(-100% - 14px));
+  background: rgba(30, 30, 30, 0.88);
+  color: #fff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  pointer-events: none;
+  z-index: 20;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 0 0 8px 8px;
+  gap: 2px;
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+
+  // Flèche vers le bas par défaut
+  &::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(30, 30, 30, 0.88);
+  }
+
+  // Quand le point est en haut : tooltip en dessous
+  &.flip-down {
+    transform: translate(-50%, 22px);
+
+    &::after {
+      top: auto;
+      bottom: 100%;
+      border-top-color: transparent;
+      border-bottom-color: rgba(30, 30, 30, 0.88);
+    }
+  }
 }
 
-.axis-label {
-  font-weight: 600;
-  color: #667eea;
+.tooltip-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.tooltip-date {
+  font-size: 0.72rem;
+  opacity: 0.8;
 }
 
 .axis-values {
@@ -149,6 +215,60 @@
 .no-data p {
   font-size: 1.1rem;
   margin: 0;
+}
+
+.time-range-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.time-range-label {
+  font-size: 0.85rem;
+  color: #666;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.time-range-buttons {
+  display: flex;
+  gap: 6px;
+
+  button {
+    padding: 4px 14px;
+    border-radius: 14px;
+    border: 1.5px solid #e0e0e0;
+    background: white;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover:not(.active) {
+      background: #f5f5f5;
+      border-color: #bbb;
+    }
+
+    &.active {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+  }
+}
+
+.time-range-count {
+  font-size: 0.8rem;
+  color: #888;
+  margin-left: auto;
+
+  &.time-range-empty {
+    color: #e57373;
+    font-style: italic;
+  }
 }
 
 @media (max-width: 768px) {

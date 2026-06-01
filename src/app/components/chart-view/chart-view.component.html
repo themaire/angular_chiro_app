@@ -53,22 +53,63 @@
     </div>
 
     <div class="simple-chart">
-      <div class="chart-grid">
-        <div class="chart-line" 
-             *ngFor="let point of chartData; let i = index"
-             [style.left.%]="point.x"
-             [style.bottom.%]="point.y"
-             [style.background-color]="getPointColor(point.value)"
-             [title]="getPointTitle(point)">
+      <!-- Axe Y : valeurs min/moy/max -->
+      <div class="axis-y">
+        <span class="axis-y-label">{{ currentStats.max | number:'1.1-1' }}{{ currentUnit }}</span>
+        <span class="axis-y-label">{{ currentStats.avg | number:'1.1-1' }}{{ currentUnit }}</span>
+        <span class="axis-y-label">{{ currentStats.min | number:'1.1-1' }}{{ currentUnit }}</span>
+      </div>
+
+      <div class="chart-area">
+        <div class="chart-grid" (mouseleave)="hideTooltip()">
+          <div class="chart-line" 
+               *ngFor="let point of chartData; let i = index"
+               [style.left.%]="point.x"
+               [style.bottom.%]="point.y"
+               [style.background-color]="getPointColor(point.value)"
+               [class.active]="activePoint === point"
+               (mouseenter)="showTooltip(point)"
+               (touchstart)="showTooltip(point); $event.preventDefault()"
+               (touchend)="hideTooltip()">
+          </div>
+
+          <!-- Bulle de valeur -->
+          <div class="point-tooltip"
+               *ngIf="activePoint"
+               [style.left.%]="activePoint.x"
+               [style.bottom.%]="activePoint.y"
+               [class.flip-down]="activePoint.y > 75">
+            <span class="tooltip-value">{{ activePoint.value | number:'1.1-2' }}{{ currentUnit }}</span>
+            <span class="tooltip-date">{{ activePoint.timestamp | date:'dd/MM HH:mm' }}</span>
+          </div>
+        </div>
+
+        <!-- Axe X : première et dernière date -->
+        <div class="axis-x">
+          <span>{{ chartData[0]?.timestamp | date:'dd/MM/yy HH:mm' }}</span>
+          <span class="axis-x-unit">{{ getCurrentMetricName() }} ({{ currentUnit }})</span>
+          <span>{{ chartData[chartData.length - 1]?.timestamp | date:'dd/MM/yy HH:mm' }}</span>
         </div>
       </div>
-      <div class="chart-axis">
-        <div class="axis-label">{{ getCurrentMetricName() }}</div>
-        <div class="axis-values">
-          <span>{{ currentStats.min | number:'1.1-1' }}{{ currentUnit }}</span>
-          <span>{{ currentStats.max | number:'1.1-1' }}{{ currentUnit }}</span>
-        </div>
+    </div>
+
+    <!-- Sélecteur de plage temporelle -->
+    <div class="time-range-bar">
+      <span class="time-range-label">Plage :</span>
+      <div class="time-range-buttons">
+        <button
+          *ngFor="let range of timeRanges"
+          [class.active]="selectedRange === range.value"
+          (click)="setTimeRange(range.value)">
+          {{ range.label }}
+        </button>
       </div>
+      <span class="time-range-count" *ngIf="chartData.length > 0">
+        {{ chartData.length }} point{{ chartData.length > 1 ? 's' : '' }}
+      </span>
+      <span class="time-range-count time-range-empty" *ngIf="chartData.length === 0 && selectedRange !== 'all'">
+        Aucune donnée sur cette période
+      </span>
     </div>
   </div>
 

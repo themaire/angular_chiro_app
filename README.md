@@ -34,9 +34,14 @@ Projet de surveillance environnementale pour l'étude des **chiroptères** (chau
 - Barre de progression du transfert avec compteur ligne par ligne
 - Spinner d'attente pendant les 2-3 secondes avant le premier paquet
 - Résumé automatique à la fin : *(N mesures entre le JJ/MM/AAAA et le JJ/MM/AAAA)*
-- Graphiques temporels (température, humidité, batterie)
+- Cartes de synthèse en grille 2×2 : température, humidité, batterie (%), tension (V)
+- Graphiques temporels avec :
+  - Sélecteur de métrique (Température / Humidité / Batterie % / Batterie V)
+  - Axes X (dates de début/fin) et Y (min, moyenne, max avec unité)
+  - Sélecteur de plage temporelle : 1h, 6h, 24h, 7j, Tout
+  - Bulle de valeur au survol / toucher d'un point (valeur + horodatage)
+  - Compteur de points affichés selon la plage sélectionnée
 - Tableau de données paginé et triable
-- Cartes de synthèse : température, humidité, batterie (%), tension (V)
 
 ### 💾 Données
 

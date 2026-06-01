@@ -21,11 +21,21 @@ interface ChartStats {
 })
 export class ChartViewComponent implements OnInit, OnChanges {
   @Input() data: SensorData[] = [];
-  
+
   selectedMetric: keyof SensorData = 'temperature';
   chartData: ChartPoint[] = [];
   currentStats: ChartStats = { min: 0, max: 0, avg: 0 };
   currentUnit = '°C';
+  selectedRange = 'all';
+  activePoint: ChartPoint | null = null;
+
+  readonly timeRanges = [
+    { label: '1h',  value: '1h' },
+    { label: '6h',  value: '6h' },
+    { label: '24h', value: '24h' },
+    { label: '7j',  value: '7d' },
+    { label: 'Tout', value: 'all' },
+  ];
 
   ngOnInit(): void {
     this.updateChart();
@@ -39,9 +49,25 @@ export class ChartViewComponent implements OnInit, OnChanges {
 
   setMetric(metric: keyof SensorData): void {
     if (metric === 'timestamp') return;
-    
     this.selectedMetric = metric;
     this.updateChart();
+  }
+
+  setTimeRange(range: string): void {
+    this.selectedRange = range;
+    this.updateChart();
+  }
+
+  private getFilteredData(): SensorData[] {
+    if (this.selectedRange === 'all') return this.data;
+    const msMap: Record<string, number> = {
+      '1h':  1 * 60 * 60 * 1000,
+      '6h':  6 * 60 * 60 * 1000,
+      '24h': 24 * 60 * 60 * 1000,
+      '7d':  7 * 24 * 60 * 60 * 1000,
+    };
+    const cutoff = new Date(Date.now() - msMap[this.selectedRange]);
+    return this.data.filter(d => d.timestamp >= cutoff);
   }
 
   getCurrentMetricName(): string {
@@ -61,8 +87,7 @@ export class ChartViewComponent implements OnInit, OnChanges {
       return;
     }
 
-    // Prendre les 50 derniers points pour optimiser l'affichage
-    const recentData = this.data.slice(-50);
+    const recentData = this.getFilteredData();
     
     // Extraire les valeurs de la métrique sélectionnée
     const values = recentData.map(d => d[this.selectedMetric] as number);
@@ -121,5 +146,13 @@ export class ChartViewComponent implements OnInit, OnChanges {
 
   getPointTitle(point: ChartPoint): string {
     return `${point.timestamp.toLocaleString()}: ${point.value.toFixed(2)}${this.currentUnit}`;
+  }
+
+  showTooltip(point: ChartPoint): void {
+    this.activePoint = point;
+  }
+
+  hideTooltip(): void {
+    this.activePoint = null;
   }
 }

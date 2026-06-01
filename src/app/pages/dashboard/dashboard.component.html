@@ -36,45 +36,41 @@
     </div>
 
     <div class="stats-grid">
-      <mat-card class="stat-card">
-        <mat-card-content>
-          <div class="stat-icon">
-            <mat-icon>thermostat</mat-icon>
-          </div>
-          <div class="stat-value">{{ currentData?.temperature?.toFixed(1) || '--' }}°C</div>
-          <div class="stat-label">Température</div>
-        </mat-card-content>
-      </mat-card>
+      <div class="stats-row">
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-icon"><mat-icon>thermostat</mat-icon></div>
+            <div class="stat-value">{{ currentData?.temperature?.toFixed(1) || '--' }}°C</div>
+            <div class="stat-label">Température</div>
+          </mat-card-content>
+        </mat-card>
 
-      <mat-card class="stat-card">
-        <mat-card-content>
-          <div class="stat-icon">
-            <mat-icon>opacity</mat-icon>
-          </div>
-          <div class="stat-value">{{ currentData?.humidity?.toFixed(1) || '--' }}%</div>
-          <div class="stat-label">Humidité</div>
-        </mat-card-content>
-      </mat-card>
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-icon"><mat-icon>opacity</mat-icon></div>
+            <div class="stat-value">{{ currentData?.humidity?.toFixed(1) || '--' }}%</div>
+            <div class="stat-label">Humidité</div>
+          </mat-card-content>
+        </mat-card>
+      </div>
 
-      <mat-card class="stat-card">
-        <mat-card-content>
-          <div class="stat-icon">
-            <mat-icon>battery_std</mat-icon>
-          </div>
-          <div class="stat-value">{{ currentData?.batteryPercent != null ? (currentData?.batteryPercent?.toFixed(0) + '%') : '--' }}</div>
-          <div class="stat-label">Batterie</div>
-        </mat-card-content>
-      </mat-card>
+      <div class="stats-row">
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-icon"><mat-icon>battery_std</mat-icon></div>
+            <div class="stat-value">{{ currentData?.batteryPercent != null ? (currentData?.batteryPercent?.toFixed(0) + '%') : '--' }}</div>
+            <div class="stat-label">Batterie</div>
+          </mat-card-content>
+        </mat-card>
 
-      <mat-card class="stat-card">
-        <mat-card-content>
-          <div class="stat-icon">
-            <mat-icon>battery_charging_full</mat-icon>
-          </div>
-          <div class="stat-value">{{ currentData?.batteryVoltage != null ? (currentData?.batteryVoltage?.toFixed(2) + 'V') : '--' }}</div>
-          <div class="stat-label">Tension</div>
-        </mat-card-content>
-      </mat-card>
+        <mat-card class="stat-card">
+          <mat-card-content>
+            <div class="stat-icon"><mat-icon>battery_charging_full</mat-icon></div>
+            <div class="stat-value">{{ currentData?.batteryVoltage != null ? (currentData?.batteryVoltage?.toFixed(2) + 'V') : '--' }}</div>
+            <div class="stat-label">Tension</div>
+          </mat-card-content>
+        </mat-card>
+      </div>
     </div>
 
     <div class="charts-section">
@@ -96,10 +92,6 @@
             <button mat-raised-button color="primary" (click)="exportData()">
               <mat-icon>download</mat-icon>
               Exporter CSV
-            </button>
-            <button mat-raised-button (click)="clearData()">
-              <mat-icon>delete</mat-icon>
-              Effacer
             </button>
           </div>
         </mat-card-header>

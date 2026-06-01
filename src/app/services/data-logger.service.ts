@@ -175,8 +175,8 @@ export class DataLoggerService {
   /**
    * Exporter toutes les données en CSV
    */
-  exportToCsv(): void {
-    const allData = this.getAllSensorData();
+  exportToCsv(data: SensorData[]): void {
+    const allData = data;
     
     if (allData.length === 0) {
       alert('Aucune donnée à exporter');
@@ -186,14 +186,14 @@ export class DataLoggerService {
     const headers = ['ID', 'Timestamp', 'Temperature (°C)', 'Humidity (%)', 'Battery (%)', 'Battery (V)'];
     const csvLines = [headers.join(',')];
 
-    allData.forEach(data => {
+    allData.forEach(d => {
       const line = [
-        data.id,
-        data.timestamp.toISOString(),
-        data.temperature.toFixed(2),
-        data.humidity.toFixed(1),
-        data.batteryPercent != null ? data.batteryPercent.toFixed(1) : '',
-        data.batteryVoltage != null ? data.batteryVoltage.toFixed(2) : ''
+        d.id,
+        d.timestamp.toISOString(),
+        d.temperature.toFixed(2),
+        d.humidity.toFixed(1),
+        d.batteryPercent != null ? d.batteryPercent.toFixed(1) : '',
+        d.batteryVoltage != null ? d.batteryVoltage.toFixed(2) : ''
       ];
       csvLines.push(line.join(','));
     });
@@ -205,13 +205,14 @@ export class DataLoggerService {
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
     
-    const fileName = `chiro-logger-all-data-${new Date().toISOString().split('T')[0]}.csv`;
-    link.setAttribute('download', fileName);
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    link.setAttribute('download', `chiro_app_${today}.csv`);
     link.style.visibility = 'hidden';
     
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
   /**

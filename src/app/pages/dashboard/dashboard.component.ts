@@ -105,16 +105,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   exportData(): void {
     try {
-      this.dataLoggerService.exportToCsv();
+      this.dataLoggerService.exportToCsv(this.sensorDataHistory);
     } catch (error) {
       console.error('Erreur lors de l\'export:', error);
-    }
-  }
-
-  clearData(): void {
-    if (confirm('Êtes-vous sûr de vouloir effacer toutes les données ?')) {
-      this.dataLoggerService.clearAllData();
-      this.updateDataHistory();
     }
   }
 }
