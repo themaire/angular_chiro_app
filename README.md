@@ -48,6 +48,7 @@ Projet de surveillance environnementale pour l'étude des **chiroptères** (chau
 - Parsing automatique du protocole CSV envoyé par l'ESP32 via NOTIFY
 - Stockage local pour consultation hors-ligne
 - Export CSV
+- **Envoi vers InfluxDB v2** : push des données vers une base InfluxDB avec gestion automatique des doublons (compatible avec [chiro_influx_loader](https://github.com/themaire/chiro_influx_loader))
 
 ### 📱 PWA
 
@@ -147,13 +148,16 @@ src/app/
 ├── components/
 │   ├── chart-view/          # Graphiques temporels
 │   ├── connection/          # Interface de connexion BLE
-│   └── data-table/          # Tableau de données
+│   ├── data-table/          # Tableau de données
+│   └── influxdb-config-dialog/ # Configuration InfluxDB
 ├── pages/
 │   ├── home/                # Page d'accueil + connexion
 │   └── dashboard/           # Visualisation des données
 ├── services/
 │   ├── bluetooth.service.ts # Web Bluetooth API (scan, connexion, GATT)
-│   └── data-logger.service.ts # Parsing CSV, stockage, export
+│   ├── data-logger.service.ts # Parsing CSV, stockage, export
+│   ├── influxdb.service.ts  # Envoi vers InfluxDB v2
+│   └── influxdb-config.service.ts # Configuration InfluxDB
 ├── models/
 │   └── sensor-data.interface.ts
 └── types/
@@ -202,7 +206,9 @@ ID,DateTime,Temperature_C,Humidity_%,Battery_%,Battery_V
 **Application ne démarre pas**
 → Supprimer `node_modules/` et relancer `npm install`. Vérifier Node.js ≥ 18.
 
-## 🔗 Liens
+## Script Python - Chiro InfluxDB Loader](https://github.com/themaire/chiro_influx_loader)
+- [Configuration InfluxDB - Documentation](INFLUXDB_SETUP.md)
+- [🔗 Liens
 
 - [Firmware ESP32 - Chiro Logger](https://github.com/themaire/chiro_logger)
 - [Web Bluetooth API - MDN](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API)

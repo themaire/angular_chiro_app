@@ -93,6 +93,20 @@
               <mat-icon>download</mat-icon>
               Exporter CSV
             </button>
+            <button mat-raised-button 
+                    color="accent" 
+                    (click)="sendToInflux()" 
+                    [disabled]="isSendingToInflux || sensorDataHistory.length === 0">
+              <mat-icon *ngIf="!isSendingToInflux">cloud_upload</mat-icon>
+              <mat-spinner *ngIf="isSendingToInflux" diameter="20"></mat-spinner>
+              <span>{{ isSendingToInflux ? 'Envoi...' : 'Envoyer vers InfluxDB' }}</span>
+            </button>
+            <button mat-icon-button 
+                    (click)="openInfluxConfig()" 
+                    matTooltip="Configurer InfluxDB"
+                    [color]="isInfluxConfigured ? 'primary' : 'warn'">
+              <mat-icon>{{ isInfluxConfigured ? 'settings' : 'settings_alert' }}</mat-icon>
+            </button>
           </div>
         </mat-card-header>
         <mat-card-content>

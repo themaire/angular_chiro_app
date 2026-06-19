@@ -1,0 +1,43 @@
+.config-dialog {
+  min-width: 500px;
+  max-width: 600px;
+
+  .full-width {
+    width: 100%;
+  }
+
+  .form-field {
+    margin-bottom: 16px;
+  }
+
+  .test-connection {
+    margin-top: 24px;
+    padding: 16px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    text-align: center;
+
+    button {
+      mat-icon, mat-spinner {
+        margin-right: 8px;
+        vertical-align: middle;
+      }
+    }
+
+    .test-hint {
+      margin-top: 8px;
+      font-size: 0.85em;
+      color: #666;
+    }
+  }
+}
+
+mat-dialog-content {
+  padding: 20px 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+mat-dialog-actions {
+  padding: 16px 24px;
+}

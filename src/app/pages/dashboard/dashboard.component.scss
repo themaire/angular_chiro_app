@@ -148,12 +148,20 @@
 .data-actions {
   display: flex;
   gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
   
   button {
     border-radius: 8px;
     
     mat-icon {
       margin-right: 8px;
+    }
+
+    mat-spinner {
+      margin-right: 8px;
+      display: inline-block;
+      vertical-align: middle;
     }
   }
 }

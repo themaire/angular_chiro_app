@@ -1,9 +1,14 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { BluetoothService } from '../../services/bluetooth.service';
 import { DataLoggerService } from '../../services/data-logger.service';
+import { InfluxdbService } from '../../services/influxdb.service';
+import { InfluxdbConfigService } from '../../services/influxdb-config.service';
 import { SensorData, AppBluetoothDevice } from '../../models/sensor-data.interface';
 import { Observable, Subscription } from 'rxjs';
+import { InfluxdbConfigDialogComponent } from '../../components/influxdb-config-dialog/influxdb-config-dialog.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -18,19 +23,28 @@ export class DashboardComponent implements OnInit, OnDestroy {
   progress$: Observable<number>;
   transferCount$: Observable<{received: number, total: number}>;
   isWaitingForData = false;
+  isSendingToInflux = false;
+  isInfluxConfigured = false;
 
   private subscriptions: Subscription[] = [];
 
   constructor(
     private bluetoothService: BluetoothService,
     private dataLoggerService: DataLoggerService,
-    private router: Router
+    private influxdbService: InfluxdbService,
+    private influxdbConfigService: InfluxdbConfigService,
+    private router: Router,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
   ) {
     this.progress$ = this.bluetoothService.transferProgress$;
     this.transferCount$ = this.bluetoothService.transferCount$;
   }
 
   ngOnInit(): void {
+    // Vérifier si InfluxDB est configuré
+    this.isInfluxConfigured = this.influxdbConfigService.isConfigured();
+    
     this.subscriptions.push(
       this.bluetoothService.isConnected$.subscribe(connected => {
         this.isConnected = connected;
@@ -38,6 +52,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
         if (!connected) {
           this.router.navigate(['/']);
         }
+      }),
+      
+      // Surveiller les changements de configuration InfluxDB
+      this.influxdbConfigService.config$.subscribe(() => {
+        this.isInfluxConfigured = this.influxdbConfigService.isConfigured();
       }),
 
       this.bluetoothService.connectedDevice$.subscribe(device => {
@@ -101,6 +120,83 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private updateDataHistory(): void {
     this.sensorDataHistory = this.dataLoggerService.getAllSensorData();
+  }
+
+  /**
+   * Ouvrir le dialog de configuration InfluxDB
+   */
+  openInfluxConfig(): void {
+    this.dialog.open(InfluxdbConfigDialogComponent, {
+      width: '600px',
+      disableClose: false
+    });
+  }
+
+  /**
+   * Envoyer les données vers InfluxDB
+   */
+  sendToInflux(): void {
+    if (!this.isInfluxConfigured) {
+      this.snackBar.open('Veuillez d\'abord configurer InfluxDB', 'Configurer', {
+        duration: 5000
+      }).onAction().subscribe(() => {
+        this.openInfluxConfig();
+      });
+      return;
+    }
+
+    if (this.sensorDataHistory.length === 0) {
+      this.snackBar.open('Aucune donnée à envoyer', 'Fermer', {
+        duration: 3000
+      });
+      return;
+    }
+
+    // Obtenir les statistiques avant envoi
+    const stats = this.influxdbService.getSendStats(this.sensorDataHistory);
+    
+    if (stats.new === 0) {
+      this.snackBar.open(
+        `Aucune nouvelle donnée (dernier ID envoyé : ${stats.lastSentId})`,
+        'Réinitialiser',
+        { duration: 5000 }
+      ).onAction().subscribe(() => {
+        // Réinitialiser le checkpoint pour renvoyer toutes les données
+        this.influxdbService.resetCheckpoint();
+        this.sendToInflux();
+      });
+      return;
+    }
+
+    this.isSendingToInflux = true;
+    this.influxdbService.sendData(this.sensorDataHistory).subscribe({
+      next: () => {
+        this.isSendingToInflux = false;
+        
+        // Mettre à jour le checkpoint après envoi réussi
+        this.influxdbService.updateCheckpoint(
+          this.sensorDataHistory.filter(d => 
+            stats.lastSentId == null || d.id > stats.lastSentId
+          )
+        );
+        
+        this.snackBar.open(
+          `✓ ${stats.new} nouvelle(s) mesure(s) envoyée(s) vers InfluxDB`,
+          'Fermer',
+          { duration: 4000, panelClass: ['success-snackbar'] }
+        );
+      },
+      error: (error) => {
+        this.isSendingToInflux = false;
+        this.snackBar.open(
+          `✗ Erreur: ${error.message}`,
+          'Réessayer',
+          { duration: 6000, panelClass: ['error-snackbar'] }
+        ).onAction().subscribe(() => {
+          this.sendToInflux();
+        });
+      }
+    });
   }
 
   exportData(): void {

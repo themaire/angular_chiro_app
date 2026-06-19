@@ -1,5 +1,7 @@
 import { NgModule, isDevMode } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { HttpClientModule } from '@angular/common/http';
+import { ReactiveFormsModule } from '@angular/forms';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -8,6 +10,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ConnectionComponent } from './components/connection/connection.component';
 import { DataTableComponent } from './components/data-table/data-table.component';
 import { ChartViewComponent } from './components/chart-view/chart-view.component';
+import { InfluxdbConfigDialogComponent } from './components/influxdb-config-dialog/influxdb-config-dialog.component';
 import { HomeComponent } from './pages/home/home.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 
@@ -29,6 +32,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialogModule } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @NgModule({
   declarations: [
@@ -36,11 +40,14 @@ import { MatDialogModule } from '@angular/material/dialog';
     ConnectionComponent,
     DataTableComponent,
     ChartViewComponent,
+    InfluxdbConfigDialogComponent,
     HomeComponent,
     DashboardComponent
   ],
   imports: [
     BrowserModule,
+    HttpClientModule,
+    ReactiveFormsModule,
     AppRoutingModule,
     ServiceWorkerModule.register('ngsw-worker.js', {
       enabled: !isDevMode(),
@@ -66,7 +73,8 @@ import { MatDialogModule } from '@angular/material/dialog';
     MatSelectModule,
     MatSlideToggleModule,
     MatSnackBarModule,
-    MatDialogModule
+    MatDialogModule,
+    MatTooltipModule
   ],
   providers: [],
   bootstrap: [AppComponent]

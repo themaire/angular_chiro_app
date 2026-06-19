@@ -1,0 +1,83 @@
+<div class="config-dialog">
+  <h2 mat-dialog-title>Configuration InfluxDB</h2>
+  
+  <mat-dialog-content>
+    <form [formGroup]="configForm">
+      <div class="form-field">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>URL du serveur InfluxDB</mat-label>
+          <input matInput formControlName="url" placeholder="http://localhost:8086">
+          <mat-hint>Ex: http://localhost:8086 ou https://mon-serveur.com:8086</mat-hint>
+          <mat-error *ngIf="configForm.get('url')?.hasError('required')">
+            L'URL est requise
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="form-field">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Token d'authentification</mat-label>
+          <input matInput type="password" formControlName="token" placeholder="Votre token API">
+          <mat-hint>Token généré dans InfluxDB (Data > API Tokens)</mat-hint>
+          <mat-error *ngIf="configForm.get('token')?.hasError('required')">
+            Le token est requis
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="form-field">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Organisation</mat-label>
+          <input matInput formControlName="organization" placeholder="Nom de votre organisation">
+          <mat-error *ngIf="configForm.get('organization')?.hasError('required')">
+            L'organisation est requise
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="form-field">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Bucket</mat-label>
+          <input matInput formControlName="bucket" placeholder="Nom du bucket">
+          <mat-hint>Le bucket où stocker les données</mat-hint>
+          <mat-error *ngIf="configForm.get('bucket')?.hasError('required')">
+            Le bucket est requis
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="form-field">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Nom de la sonde</mat-label>
+          <input matInput formControlName="deviceName" placeholder="logger1">
+          <mat-hint>Identifiant de la sonde (tag 'device' dans InfluxDB)</mat-hint>
+          <mat-error *ngIf="configForm.get('deviceName')?.hasError('required')">
+            Le nom de la sonde est requis
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="form-field">
+        <mat-slide-toggle formControlName="enabled">
+          Activer l'envoi automatique vers InfluxDB
+        </mat-slide-toggle>
+      </div>
+
+      <div class="test-connection">
+        <button mat-raised-button color="accent" type="button" (click)="testConnection()" [disabled]="isTesting || configForm.invalid">
+          <mat-icon *ngIf="!isTesting">wifi_tethering</mat-icon>
+          <mat-spinner *ngIf="isTesting" diameter="20"></mat-spinner>
+          <span>{{ isTesting ? 'Test en cours...' : 'Tester la connexion' }}</span>
+        </button>
+        <p class="test-hint">Testez votre connexion avant de sauvegarder</p>
+      </div>
+    </form>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button (click)="cancel()">Annuler</button>
+    <button mat-raised-button color="primary" (click)="save()" [disabled]="configForm.invalid">
+      Sauvegarder
+    </button>
+  </mat-dialog-actions>
+</div>
